@@ -13,6 +13,8 @@ Repositorio de infraestructura compartida del proyecto **CampusLab**. Aquí vive
 
 ```
 infra/
+├── apim/
+│   └── ...              # Azure API Management del BFF: scripts, políticas (CORS + JWT) y README
 ├── apps/
 │   └── compose.yml      # orquesta los microservicios (bookings-svc, catalog-svc, notify-svc, report-svc, audit-svc)
 ├── mq/
@@ -20,7 +22,8 @@ infra/
 │   ├── rabbitmq.conf    # formación automática del clúster (peer discovery)
 │   └── .env.example     # usuario, clave y cookie de Erlang (copiar a .env)
 └── kafka/
-    └── compose.yml      # Zookeeper (3 nodos) + Kafka (3 brokers) + Kafka UI
+    ├── compose.yml      # Zookeeper (3 nodos) + Kafka (3 brokers) + Kafka UI (pendiente de definir)
+    └── compose.dev.yml  # Kafka de desarrollo: 1 broker KRaft, sin Zookeeper (para auditoría/reportería en local)
 ```
 
 ## 🚦 Cuándo usar cada compose
@@ -42,7 +45,9 @@ docker exec campuslab-rabbitmq-1 rabbitmqctl cluster_status   # deben verse rabb
 # ms-campuslab-notify/compose.yml también publica el 5672: no levantar ambos a la vez.
 
 # Levantar streaming
-cd kafka && docker compose up -d
+cd kafka && docker compose up -d                  # clúster del proyecto (pendiente de definir)
+# Para desarrollo local (auditoría, reportería): un solo broker KRaft
+cd kafka && docker compose -f compose.dev.yml up -d
 
 # Levantar las apps (requiere que mq/kafka ya estén arriba si las apps dependen de ellos)
 cd apps && docker compose up -d
@@ -71,3 +76,4 @@ Este repo se incorpora al proyecto cuando una evaluación exige explícitamente 
 ## 👥 Equipo
 
 - *(completar con integrantes del equipo)*
+# campuslab-infra
