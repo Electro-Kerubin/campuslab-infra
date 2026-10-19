@@ -1,0 +1,5 @@
+# Estado local de la sesión de APIM (nombre generado, tokens, JSON temporal): no versionar
+apim.env
+policy.json
+api.json
+policy-response.json

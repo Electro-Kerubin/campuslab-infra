@@ -1,0 +1,33 @@
+<policies>
+  <inbound>
+    <base />
+    <!-- Solo CORS (sin validar JWT): para verificar CORS de forma aislada antes de activar policy-v1.xml. -->
+    <cors allow-credentials="false">
+      <allowed-origins>
+        <origin>http://localhost:4200</origin>
+      </allowed-origins>
+      <allowed-methods preflight-result-max-age="3600">
+        <method>GET</method>
+        <method>POST</method>
+        <method>PUT</method>
+        <method>PATCH</method>
+        <method>DELETE</method>
+        <method>OPTIONS</method>
+      </allowed-methods>
+      <allowed-headers>
+        <header>Authorization</header>
+        <header>Content-Type</header>
+        <header>Accept</header>
+      </allowed-headers>
+    </cors>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>

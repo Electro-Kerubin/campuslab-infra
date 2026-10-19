@@ -1,0 +1,61 @@
+<policies>
+  <inbound>
+    <base />
+
+    <!-- 1) CORS. APIM reemplaza las cabeceras CORS que envie el backend (medido: llega un solo Allow-Origin).
+         Responde el preflight (OPTIONS) por si mismo, antes de pedir token.
+         Para el frontend desplegado, agregar su origen exacto como otro <origin>. -->
+    <cors allow-credentials="false">
+      <allowed-origins>
+        <origin>http://localhost:4200</origin>
+      </allowed-origins>
+      <allowed-methods preflight-result-max-age="3600">
+        <method>GET</method>
+        <method>POST</method>
+        <method>PUT</method>
+        <method>PATCH</method>
+        <method>DELETE</method>
+        <method>OPTIONS</method>
+      </allowed-methods>
+      <allowed-headers>
+        <header>Authorization</header>
+        <header>Content-Type</header>
+        <header>Accept</header>
+      </allowed-headers>
+    </cors>
+
+    <!-- 2) Rutas internas del BFF que no deben salir a Internet. -->
+    <choose>
+      <when condition='@(context.Request.Url.Path.Contains("/actuator") || context.Request.Url.Path.Contains("/swagger-ui") || context.Request.Url.Path.Contains("/v3/api-docs"))'>
+        <return-response>
+          <set-status code="404" reason="Not Found" />
+        </return-response>
+      </when>
+    </choose>
+
+    <!-- 3) JWT de Entra ID. Hoy el frontend envia el id_token, cuyo audience es el clientId del SPA
+         (NO api://campuslab-bff). /api/public/ es publico en el BFF y queda exceptuado. -->
+    <choose>
+      <when condition='@(!context.Request.Url.Path.Contains("/api/public/"))'>
+        <validate-jwt header-name="Authorization" require-scheme="Bearer" failed-validation-httpcode="401" failed-validation-error-message="Token invalido o ausente">
+          <openid-config url="https://login.microsoftonline.com/7da49cdc-96c1-4342-bf8b-54142c0c27d8/v2.0/.well-known/openid-configuration" />
+          <audiences>
+            <audience>34af23ca-2be7-4f00-93bb-a6e711c38dba</audience>
+          </audiences>
+          <issuers>
+            <issuer>https://login.microsoftonline.com/7da49cdc-96c1-4342-bf8b-54142c0c27d8/v2.0</issuer>
+          </issuers>
+        </validate-jwt>
+      </when>
+    </choose>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>
