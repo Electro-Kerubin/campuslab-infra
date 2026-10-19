@@ -1,0 +1,2 @@
+# Credenciales locales (copiar .env.example a .env); nunca versionar
+.env
