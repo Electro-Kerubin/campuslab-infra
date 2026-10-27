@@ -1,0 +1,41 @@
+# RabbitMQ de CampusLab en la nube (AWS EC2): UN nodo por instancia; entre las dos forman el clúster.
+#
+# Este mismo archivo se ejecuta en CADA instancia (lo copia y lo levanta ./apply-compose.sh):
+#
+#   docker compose up -d --wait                       # levanta el nodo y espera a que esté sano
+#   docker exec rabbitmq rabbitmqctl cluster_status   # deben verse los 2 nodos
+#
+# Lo que cambia entre nodos NO está aquí sino en archivos que genera apply-compose.sh junto a este:
+#   .env             usuario, contraseña y cookie de Erlang (secretos; nunca van al repositorio)
+#   20-cluster.conf  los dos nombres de nodo, para que se encuentren y formen el clúster
+#
+# Red "host": el nodo usa el hostname de la instancia (ip-172-31-X-Y), que es su nombre de nodo en el clúster
+# y se resuelve por el DNS de la VPC. Puertos: 5672 AMQP · 15672 Management UI · 4369 epmd · 25672 distribución Erlang.
+# El security group solo deja entrar a 5672 / 15672 a la IP de quien despliega, y entre los nodos todo el tráfico.
+
+name: campuslab-mq
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.0-management     # misma versión que el compose local (../compose.yml) y que notify
+    container_name: rabbitmq
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?define RABBITMQ_USER en .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?define RABBITMQ_PASS en .env}
+      # La cookie de Erlang debe ser IDÉNTICA en todos los nodos del clúster
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:?define RABBITMQ_ERLANG_COOKIE en .env}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./20-cluster.conf:/etc/rabbitmq/conf.d/20-cluster.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  rabbitmq_data:
+    name: rabbitmq_data      # conserva el estado del nodo (colas, usuarios, pertenencia al clúster) entre despliegues

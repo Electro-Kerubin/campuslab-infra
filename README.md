@@ -20,7 +20,8 @@ infra/
 ├── mq/
 │   ├── compose.yml      # RabbitMQ (clúster de 2 nodos) + Management UI
 │   ├── rabbitmq.conf    # formación automática del clúster (peer discovery)
-│   └── .env.example     # usuario, clave y cookie de Erlang (copiar a .env)
+│   ├── .env.example     # usuario, clave y cookie de Erlang (copiar a .env)
+│   └── aws/             # el mismo clúster de 2 nodos en la nube (2 EC2): compose.yml + scripts + README
 └── kafka/
     ├── compose.yml      # Zookeeper (3 nodos) + Kafka (3 brokers) + Kafka UI (pendiente de definir)
     └── compose.dev.yml  # Kafka de desarrollo: 1 broker KRaft, sin Zookeeper (para auditoría/reportería en local)
@@ -41,8 +42,12 @@ infra/
 cd mq && docker compose up -d
 docker exec campuslab-rabbitmq-1 rabbitmqctl cluster_status   # deben verse rabbit@rabbitmq-1 y rabbit@rabbitmq-2
 # UI: nodo 1 http://localhost:15672 · nodo 2 http://localhost:15673 (usuario/clave por defecto: campuslab/campuslab)
-# Los microservicios se conectan al nodo 1; con SPRING_RABBITMQ_ADDRESSES=localhost:5672,localhost:5673 toleran la caída de un nodo.
+# Los microservicios se conectan al nodo 1. Con RABBITMQ_ADDRESSES=localhost:5672,localhost:5673 el cliente se reconecta
+# al otro nodo, pero las colas clásicas viven en UN nodo: si cae ese, quedan sin servicio (ver mq/aws/README.md).
 # ms-campuslab-notify/compose.yml también publica el 5672: no levantar ambos a la vez.
+
+# RabbitMQ en la nube (AWS): 2 instancias EC2 con el compose de mq/aws/compose.yml
+cd mq/aws && ./deploy-cluster.sh && ./verify.sh     # detalle y direcciones en mq/aws/README.md
 
 # Levantar streaming
 cd kafka && docker compose up -d                  # clúster del proyecto (pendiente de definir)
